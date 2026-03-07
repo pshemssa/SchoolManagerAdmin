@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       String
+  deviceId   String
+  isVerified Boolean  @default(false)
+  studentId  String?
+  createdAt  DateTime @default(now())
+}
+
+model Student {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  classId    String?
+  feeBalance Float    @default(0)
+  createdAt  DateTime @default(now())
+  grades     Grade[]
+  attendance Attendance[]
+  transactions FeeTransaction[]
+}
+
+model FeeTransaction {
+  id          String   @id @default(uuid())
+  studentId   String
+  student     Student  @relation(fields: [studentId], references: [id])
+  type        String
+  amount      Float
+  status      String   @default("completed")
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model Grade {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  subject   String
+  grade     String
+  marks     Int
+  createdAt DateTime @default(now())
+}
+
+model Attendance {
+  id        String   @id @default(uuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  date      DateTime
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model Class {
+  id        String   @id @default(uuid())
+  name      String
+  grade     String
+  teacherId String?
+  createdAt DateTime @default(now())
+  schedules Schedule[]
+}
+
+model Schedule {
+  id        String @id @default(uuid())
+  classId   String
+  class     Class  @relation(fields: [classId], references: [id])
+  day       String
+  subject   String
+  startTime String
+  endTime   String
+}
+
+model Teacher {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  subject   String
+  createdAt DateTime @default(now())
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  createdAt DateTime @default(now())
+}
