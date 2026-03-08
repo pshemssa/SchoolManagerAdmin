@@ -14,6 +14,29 @@ class ClassManagementService {
       include: { schedules: true }
     });
   }
+
+  async createClass(data) {
+    return await prisma.class.create({
+      data: {
+        name: data.name,
+        grade: data.grade,
+        teacherId: data.teacherId
+      }
+    });
+  }
+
+  async updateClass(id, data) {
+    return await prisma.class.update({
+      where: { id },
+      data
+    });
+  }
+
+  async deleteClass(id) {
+    return await prisma.class.delete({
+      where: { id }
+    });
+  }
 }
 
 module.exports = new ClassManagementService();

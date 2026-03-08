@@ -2,7 +2,16 @@ const prisma = require('../config/prisma');
 
 class UserManagementService {
   async getAllUsers() {
-    return await prisma.user.findMany();
+    try {
+      return await prisma.user.findMany({
+        include: {
+          student: { select: { id: true, name: true, faculty: true } }
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching users with student relation:', error);
+      return await prisma.user.findMany();
+    }
   }
 
   async verifyUser(userId) {
