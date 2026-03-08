@@ -48,6 +48,32 @@ export default function FeeManagementPage() {
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
 
+  const handleApprove = async (id, type) => {
+    try {
+      if (type === 'deposit') {
+        await feeManagementService.approveDeposit(id);
+      } else {
+        await feeManagementService.approveRefund(id);
+      }
+      loadTransactions();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Approval failed');
+    }
+  };
+
+  const handleReject = async (id, type) => {
+    try {
+      if (type === 'deposit') {
+        await feeManagementService.rejectDeposit(id);
+      } else {
+        await feeManagementService.rejectRefund(id);
+      }
+      loadTransactions();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Rejection failed');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex">
       {isSidebarOpen && (
@@ -176,6 +202,7 @@ export default function FeeManagementPage() {
                       <th className="px-6 py-4 font-medium">Type</th>
                       <th className="px-6 py-4 font-medium">Amount</th>
                       <th className="px-6 py-4 font-medium">Status</th>
+                      <th className="px-6 py-4 font-medium">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-800">
@@ -193,9 +220,24 @@ export default function FeeManagementPage() {
                           {tx.amount > 0 ? '+' : ''}${Math.abs(tx.amount).toLocaleString()}
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${tx.status === 'completed' ? 'bg-green-900/50 text-green-300' : 'bg-yellow-900/50 text-yellow-300'}`}>
+                          <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                            tx.status === 'completed' ? 'bg-green-900/50 text-green-300' : 
+                            tx.status === 'rejected' ? 'bg-red-900/50 text-red-300' :
+                            'bg-yellow-900/50 text-yellow-300'
+                          }`}>
                             {tx.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {tx.status === 'pending' && (
+                            <div className="flex gap-2">
+                              {tx.proofUrl && (
+                                <a href={tx.proofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 mr-2">View Proof</a>
+                              )}
+                              <button onClick={() => handleApprove(tx.id, tx.type)} className="text-green-400 hover:text-green-300">Approve</button>
+                              <button onClick={() => handleReject(tx.id, tx.type)} className="text-red-400 hover:text-red-300">Reject</button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
