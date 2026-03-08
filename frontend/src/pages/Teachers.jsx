@@ -8,6 +8,9 @@ export default function TeachersPage() {
   const [teachers, setTeachers] = useState([]);
   const [search, setSearch] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [formData, setFormData] = useState({ name: '', email: '', subject: '', password: '' });
   const navigate = useNavigate();
   const pendingCount = usePendingDevicesCount();
 
@@ -32,6 +35,39 @@ export default function TeachersPage() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingTeacher) {
+        await teacherManagementService.updateTeacher(editingTeacher.id, formData);
+      } else {
+        await teacherManagementService.createTeacher(formData);
+      }
+      setShowModal(false);
+      setFormData({ name: '', email: '', subject: '', password: '' });
+      setEditingTeacher(null);
+      loadTeachers();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Operation failed');
+    }
+  };
+
+  const handleEdit = (teacher) => {
+    setEditingTeacher(teacher);
+    setFormData({ name: teacher.name, email: teacher.email, subject: teacher.subject, password: '' });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this teacher?')) return;
+    try {
+      await teacherManagementService.deleteTeacher(id);
+      loadTeachers();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Delete failed');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex">
@@ -100,6 +136,7 @@ export default function TeachersPage() {
               <h1 className="text-2xl md:text-3xl font-bold">Teachers</h1>
               <p className="text-gray-400 mt-1">Manage teaching staff.</p>
             </div>
+            <button onClick={() => { setShowModal(true); setEditingTeacher(null); setFormData({ name: '', email: '', subject: '', password: '' }); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Add Teacher</button>
 
             <div className="relative w-full md:w-80">
               <input
@@ -122,6 +159,7 @@ export default function TeachersPage() {
                     <th className="px-6 py-4 font-medium">Subject</th>
                     <th className="px-6 py-4 font-medium">Email</th>
                     <th className="px-6 py-4 font-medium">Joined</th>
+                    <th className="px-6 py-4 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -140,6 +178,10 @@ export default function TeachersPage() {
                       </td>
                       <td className="px-6 py-4">{t.email}</td>
                       <td className="px-6 py-4">{new Date(t.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <button onClick={() => handleEdit(t)} className="text-blue-400 hover:text-blue-300 mr-3">Edit</button>
+                        <button onClick={() => handleDelete(t.id)} className="text-red-400 hover:text-red-300">Delete</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -154,6 +196,24 @@ export default function TeachersPage() {
           </div>
         </main>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-lg w-96">
+            <h2 className="text-2xl font-bold text-white mb-4">{editingTeacher ? 'Edit Teacher' : 'Add Teacher'}</h2>
+            <form onSubmit={handleSubmit}>
+              <input type="text" placeholder="Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-3" required />
+              <input type="email" placeholder="Email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-3" required />
+              <input type="text" placeholder="Subject" value={formData.subject} onChange={(e) => setFormData({...formData, subject: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-3" required />
+              <input type="password" placeholder={editingTeacher ? 'Password (leave blank to keep)' : 'Password'} value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-4" required={!editingTeacher} />
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Save</button>
+                <button type="button" onClick={() => { setShowModal(false); setEditingTeacher(null); }} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
