@@ -6,6 +6,7 @@ import { usePendingDevicesCount } from '../hooks/usePendingDevicesCount';
 
 export default function DeviceVerificationPage() {
   const [devices, setDevices] = useState([]);
+  const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
@@ -17,14 +18,25 @@ export default function DeviceVerificationPage() {
 
   const loadDevices = async () => {
     try {
-      const response = await userManagementService.getPendingVerifications();
-      setDevices(response.data.users || []);
+      const response = await userManagementService.getAllUsers();
+      console.log('API Response:', response);
+      console.log('Users data:', response.data);
+      const usersData = response.data.users || response.data || [];
+      setDevices(Array.isArray(usersData) ? usersData : []);
     } catch (error) {
       console.error('Error loading devices:', error);
+      console.error('Error response:', error.response);
+      setDevices([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const filteredDevices = devices.filter(device => {
+    if (filter === 'pending') return !device.isVerified;
+    if (filter === 'approved') return device.isVerified;
+    return true;
+  });
 
   const handleApprove = async (id) => {
     try {
@@ -124,41 +136,80 @@ export default function DeviceVerificationPage() {
             </div>
           </div>
 
+          <div className="flex gap-3 mb-6">
+            <button
+              onClick={() => setFilter('all')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              All ({devices.length})
+            </button>
+            <button
+              onClick={() => setFilter('pending')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Pending ({devices.filter(d => !d.isVerified).length})
+            </button>
+            <button
+              onClick={() => setFilter('approved')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                filter === 'approved' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+              }`}
+            >
+              Approved ({devices.filter(d => d.isVerified).length})
+            </button>
+          </div>
+
           <div className="bg-gray-900 rounded-xl border border-gray-800 p-6">
-            <h2 className="text-xl font-semibold mb-6">Pending Requests ({devices.length})</h2>
+            <h2 className="text-xl font-semibold mb-6">Device Requests ({filteredDevices.length})</h2>
 
             <div className="space-y-4">
-              {devices.map(device => (
+              {filteredDevices.map(device => (
                 <div
                   key={device.id}
                   className="bg-gray-800 rounded-lg p-5 border border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
                   <div>
                     <div className="font-medium text-lg">{device.name}</div>
-                    <div className="text-sm text-gray-400 mt-1">{device.role}</div>
+                    <div className="text-sm text-gray-400 mt-1">{device.email} • {device.role}</div>
+                    {device.student && (
+                      <div className="text-sm text-blue-400 mt-1">Student: {device.student.name} (ID: {device.studentId})</div>
+                    )}
                     <div className="text-xs text-gray-500 mt-2 font-mono">
                       {device.deviceId}
                     </div>
+                    <div className="mt-2">
+                      <span className={`inline-block px-3 py-1 text-xs font-medium rounded-full ${
+                        device.isVerified ? 'bg-green-900/50 text-green-300' : 'bg-yellow-900/50 text-yellow-300'
+                      }`}>
+                        {device.isVerified ? 'Verified' : 'Pending'}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => handleApprove(device.id)}
-                      className="px-6 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition flex items-center gap-2"
-                    >
-                      <span>✓</span> Approve
-                    </button>
-                    <button
-                      onClick={() => handleReject(device.id)}
-                      className="px-6 py-2.5 bg-red-600/80 hover:bg-red-700 rounded-lg font-medium transition flex items-center gap-2"
-                    >
-                      <span>✗</span> Reject
-                    </button>
-                  </div>
+                  {!device.isVerified && (
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleApprove(device.id)}
+                        className="px-6 py-2.5 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition flex items-center gap-2"
+                      >
+                        <span>✓</span> Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(device.id)}
+                        className="px-6 py-2.5 bg-red-600/80 hover:bg-red-700 rounded-lg font-medium transition flex items-center gap-2"
+                      >
+                        <span>✗</span> Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
 
-              {devices.length === 0 && (
+              {filteredDevices.length === 0 && (
                 <div className="text-center py-12 text-gray-500">
                   No pending device verification requests.
                 </div>
