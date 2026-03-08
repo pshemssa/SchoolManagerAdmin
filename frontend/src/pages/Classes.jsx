@@ -8,6 +8,9 @@ export default function ClassesPage() {
   const [classes, setClasses] = useState([]);
   const [search, setSearch] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingClass, setEditingClass] = useState(null);
+  const [formData, setFormData] = useState({ name: '', grade: '' });
   const navigate = useNavigate();
   const pendingCount = usePendingDevicesCount();
 
@@ -30,6 +33,39 @@ export default function ClassesPage() {
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingClass) {
+        await classManagementService.updateClass(editingClass.id, formData);
+      } else {
+        await classManagementService.createClass(formData);
+      }
+      setShowModal(false);
+      setFormData({ name: '', grade: '' });
+      setEditingClass(null);
+      loadClasses();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Operation failed');
+    }
+  };
+
+  const handleEdit = (cls) => {
+    setEditingClass(cls);
+    setFormData({ name: cls.name, grade: cls.grade });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this class?')) return;
+    try {
+      await classManagementService.deleteClass(id);
+      loadClasses();
+    } catch (error) {
+      alert(error.response?.data?.error || 'Delete failed');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex">
@@ -98,6 +134,7 @@ export default function ClassesPage() {
               <h1 className="text-2xl md:text-3xl font-bold">Classes</h1>
               <p className="text-gray-400 mt-1">Manage classes and schedules.</p>
             </div>
+            <button onClick={() => { setShowModal(true); setEditingClass(null); setFormData({ name: '', grade: '' }); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Add Class</button>
 
             <div className="relative w-full md:w-80">
               <input
@@ -119,6 +156,7 @@ export default function ClassesPage() {
                     <th className="px-6 py-4 font-medium">Class</th>
                     <th className="px-6 py-4 font-medium">Grade</th>
                     <th className="px-6 py-4 font-medium">Created</th>
+                    <th className="px-6 py-4 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-800">
@@ -127,6 +165,10 @@ export default function ClassesPage() {
                       <td className="px-6 py-4 font-medium">{c.name}</td>
                       <td className="px-6 py-4">{c.grade}</td>
                       <td className="px-6 py-4">{new Date(c.createdAt).toLocaleDateString()}</td>
+                      <td className="px-6 py-4">
+                        <button onClick={() => handleEdit(c)} className="text-blue-400 hover:text-blue-300 mr-3">Edit</button>
+                        <button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-300">Delete</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -141,6 +183,22 @@ export default function ClassesPage() {
           </div>
         </main>
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-900 p-8 rounded-lg w-96">
+            <h2 className="text-2xl font-bold text-white mb-4">{editingClass ? 'Edit Class' : 'Add Class'}</h2>
+            <form onSubmit={handleSubmit}>
+              <input type="text" placeholder="Class Name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-3" required />
+              <input type="text" placeholder="Grade" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} className="w-full bg-gray-800 text-white px-4 py-2 rounded mb-4" required />
+              <div className="flex gap-3">
+                <button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">Save</button>
+                <button type="button" onClick={() => { setShowModal(false); setEditingClass(null); }} className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
