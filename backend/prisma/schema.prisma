@@ -15,36 +15,39 @@ model User {
   role       String
   deviceId   String
   isVerified Boolean  @default(false)
-  studentId  String?
+  studentId  Int?
+  student    Student? @relation(fields: [studentId], references: [id])
   createdAt  DateTime @default(now())
 }
 
 model Student {
-  id         String   @id @default(uuid())
+  id         Int      @id @default(autoincrement())
   name       String
-  email      String   @unique
+  faculty    String
   classId    String?
   feeBalance Float    @default(0)
   createdAt  DateTime @default(now())
   grades     Grade[]
   attendance Attendance[]
   transactions FeeTransaction[]
+  users      User[]
 }
 
 model FeeTransaction {
   id          String   @id @default(uuid())
-  studentId   String
+  studentId   Int
   student     Student  @relation(fields: [studentId], references: [id])
   type        String
   amount      Float
   status      String   @default("completed")
   description String?
+  proofUrl    String?
   createdAt   DateTime @default(now())
 }
 
 model Grade {
   id        String   @id @default(uuid())
-  studentId String
+  studentId Int
   student   Student  @relation(fields: [studentId], references: [id])
   subject   String
   grade     String
@@ -54,7 +57,7 @@ model Grade {
 
 model Attendance {
   id        String   @id @default(uuid())
-  studentId String
+  studentId Int
   student   Student  @relation(fields: [studentId], references: [id])
   date      DateTime
   status    String
