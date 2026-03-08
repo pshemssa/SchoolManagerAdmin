@@ -238,6 +238,9 @@ export default function FeeManagementPage() {
                               <button onClick={() => handleReject(tx.id, tx.type)} className="text-red-400 hover:text-red-300">Reject</button>
                             </div>
                           )}
+                          {(tx.status === 'completed' || tx.status === 'rejected') && tx.proofUrl && (
+                            <a href={tx.proofUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">View Proof</a>
+                          )}
                         </td>
                       </tr>
                     ))}
