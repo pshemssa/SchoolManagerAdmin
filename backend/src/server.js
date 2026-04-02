@@ -9,7 +9,10 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
+  credentials: true
+}));
 app.use(express.json());
 
 const limiter = rateLimit({

@@ -105,8 +105,7 @@ export default function DeviceVerificationPage() {
           <NavItem icon="🛡️" label="Devices" active={true} badge={pendingCount > 0 ? pendingCount : null} to="/admin/devices" />
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800 space-y-3">
-          <NavItem icon="🌞" label="Light Mode" />
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-800">
           <button
             onClick={() => {
               localStorage.removeItem('adminToken');
